@@ -258,15 +258,50 @@ void * nano_malloc(RARG malloc_size_t s)
     while (r)
     {
         int rem = r->size - alloc_size;
+
+        /* To prevent a trailing but small chunk to be left unused, grow
+         * the available memory and the chunk instead of allocating
+         * alloc_size */
+        if (rem < 0 && r->next == NULL)
+        {
+            /* This is the last chunk, check if there is any allocated
+             * memory after it. */
+            chunk *heap_end = sbrk_aligned(RCALL 0);
+            if ((char *)r + r->size == heap_end)
+            {
+                /* Attempt to allocate the additional memory needed and
+                 * go on as usual */
+                if (sbrk_aligned(RCALL -rem) == (void*)-1)
+                {
+                    RERRNO = ENOMEM;
+                    MALLOC_UNLOCK;
+                    return NULL;
+                }
+                rem = 0;
+                r->size = alloc_size;
+                /* Fall through to regular logic below */
+            }
+        }
         if (rem >= 0)
         {
             if (rem >= MALLOC_MINCHUNK)
             {
                 /* Find a chunk that much larger than required size, break
-                * it into two chunks and return the second one */
-                r->size = rem;
-                r = (chunk *)((char *)r + rem);
+                 * it into two chunks and return the first one.
+                 * Returning the second part would be a bit easier, because
+                 * the chunk list stays intact, but doing that leads to
+                 * memory fragmentation quickly.
+                 */
+                chunk *part2 = (chunk *)((char *)r + alloc_size);
+                part2->size = rem;
+                part2->next = r->next;
                 r->size = alloc_size;
+                if ( p == r )
+                {
+                    free_list = part2;
+                } else {
+                    p->next = part2;
+                }
             }
             /* Find a chunk that is exactly the size or slightly bigger
              * than requested size, just return this chunk */
