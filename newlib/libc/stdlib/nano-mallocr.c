@@ -110,7 +110,7 @@
     (((size) + (align) -1L) & ~((align) -1L))
 
 /* Alignment of allocated block */
-#define MALLOC_ALIGN (8U)
+#define MALLOC_ALIGN (4U)
 #define CHUNK_ALIGN (sizeof(void*))
 #define MALLOC_PADDING ((MAX(MALLOC_ALIGN, CHUNK_ALIGN)) - CHUNK_ALIGN)
 
