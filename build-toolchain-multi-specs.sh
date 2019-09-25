@@ -242,7 +242,7 @@ build_gcc() {
 
     log copy gcc-$lib_suffix
     pushd $INSTALLDIR_NATIVE/lib/gcc/arm-none-eabi/10.0.0/
-    ln -v "libgcc.a" "libgcc_${lib_suffix}.a"
+    ln -vf "libgcc.a" "libgcc_${lib_suffix}.a"
     popd
 }
 
@@ -286,10 +286,10 @@ build_libc() {
 
     log copy libc-$lib_suffix
     pushd $INSTALLDIR_NATIVE/arm-none-eabi/lib
-    ln -v "libc.a" "libc_nano_${lib_suffix}.a"
-    ln -v "libg.a" "libg_nano_${lib_suffix}.a"
-    ln -v "librdimon.a" "librdimon_nano_${lib_suffix}.a"
-    mv -v "libm.a" "libm_nano_${lib_suffix}.a"
+    ln -vf "libc.a" "libc_nano_${lib_suffix}.a"
+    ln -vf "libg.a" "libg_nano_${lib_suffix}.a"
+    ln -vf "librdimon.a" "librdimon_nano_${lib_suffix}.a"
+    mv -vf "libm.a" "libm_nano_${lib_suffix}.a"
 
     local newspecs="nano_${lib_suffix}.specs"
     inform gen $newspecs
