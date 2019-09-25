@@ -258,6 +258,7 @@ build_libc() {
     ln -v "libc.a" "libc_nano_${lib_suffix}.a"
     ln -v "libg.a" "libg_nano_${lib_suffix}.a"
     ln -v "librdimon.a" "librdimon_nano_${lib_suffix}.a"
+    mv -v "libm.a" "libm_nano_${lib_suffix}.a"
 
     local newspecs="nano_${lib_suffix}.specs"
     inform gen $newspecs
