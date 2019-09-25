@@ -39,6 +39,7 @@ set -u # bail out on unknown variables
 set -o pipefail # return value of pipeline is rightmost command with nonzero status
 
 ts_start=`date +%s`
+ts_loglast=
 
 echo using build log timestamp $ts_start
 
@@ -48,14 +49,29 @@ echo using build log timestamp $ts_start
 log() {
     action=$1
     target=$2
+    timestamp
     if [ ! -z ${logfile:-} ]; then unlog; fi
     fn=buildlog.$ts_start.$target.$action
     logfile=$logdir/$fn
-    echo "$(date): $action $target, logging to $fn"
+    echo -n "$(date): $action $target, logging to $fn..."
     exec 6>&1 # save stdout
     exec 7>&2 # save stderr
     exec > $logfile
     exec 2> $logfile
+    ts_loglast=`date +%s`
+}
+
+timestamp() {
+    now=`date +%s`
+    if [ ! -z $ts_loglast ]
+    then
+        if [ ! -z ${logfile:-} ]
+        then
+            echo " ($[now-ts_loglast] s.)" >&6
+        else
+            echo " ($[now-ts_loglast] s.)"
+        fi
+    fi
 }
 
 unlog() {
@@ -68,13 +84,15 @@ unlog() {
 inform() {
     action=$1
     target=$2
-    msg="$(date): $action $target (no logfile)"
+    timestamp
+    msg="$(date): $action $target (no logfile)..."
     if [ ! -z ${logfile:-} ]
     then
-        echo $msg
+        echo -n $msg >&6
     else
-        echo $msg >&6
+        echo -n $msg
     fi
+    ts_loglast=`date +%s`
 }
 
 umask 022
@@ -157,9 +175,7 @@ else
     popd
 fi
 
-pushd $INSTALLDIR_NATIVE
-rm -rf ./lib
-popd
+rm -rf $INSTALLDIR_NATIVE/lib
 
 build_gcc() {
     local lib_cflags=$1
@@ -304,6 +320,8 @@ build_libc "${lib_cflags}" "${lib_suffix}"
 mkdir -p $INSTALLDIR_NATIVE/arm-none-eabi/include/newlib-nano
 cp -f $INSTALLDIR_NATIVE/arm-none-eabi/include/newlib.h \
       $INSTALLDIR_NATIVE/arm-none-eabi/include/newlib-nano/newlib.h
+
+timestamp
 
 unlog
 
