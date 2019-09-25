@@ -242,7 +242,9 @@ build_gcc() {
 
     log copy gcc-$lib_suffix
     pushd $INSTALLDIR_NATIVE/lib/gcc/arm-none-eabi/10.0.0/
-    ln -vf "libgcc.a" "libgcc_${lib_suffix}.a"
+    mv -vf "libgcc.a" "libgcc_nano_${lib_suffix}.a"
+    # create empty lib to silence the linker, that really wants to see (but not use) it
+    arm-none-eabi-ar r libgcc.a
     popd
 }
 
@@ -286,10 +288,16 @@ build_libc() {
 
     log copy libc-$lib_suffix
     pushd $INSTALLDIR_NATIVE/arm-none-eabi/lib
-    ln -vf "libc.a" "libc_nano_${lib_suffix}.a"
-    ln -vf "libg.a" "libg_nano_${lib_suffix}.a"
-    ln -vf "librdimon.a" "librdimon_nano_${lib_suffix}.a"
+    mv -vf "libc.a" "libc_nano_${lib_suffix}.a"
+    mv -vf "libg.a" "libg_nano_${lib_suffix}.a"
+    mv -vf "librdimon.a" "librdimon_nano_${lib_suffix}.a"
     mv -vf "libm.a" "libm_nano_${lib_suffix}.a"
+
+    # create empty libs to silence the linker, that really wants to see (but not use) them
+    arm-none-eabi-ar r libc.a
+    ln -vf libc.a libg.a
+    ln -vf libc.a libm.a
+    ln -vf libc.a librdimon.a
 
     local newspecs="nano_${lib_suffix}.specs"
     inform gen $newspecs
