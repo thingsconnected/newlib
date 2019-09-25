@@ -110,48 +110,52 @@ NEWLIB_CONFIG_OPTS=" --build=$BUILD --host=$HOST_NATIVE "
 GDB_CONFIG_OPTS=" --build=$BUILD --host=$HOST_NATIVE
                   --with-libexpat-prefix=$BUILDDIR_NATIVE/host-libs/usr "
 
-mkdir -p $BUILDDIR_NATIVE
-rm -rf $INSTALLDIR_NATIVE && mkdir -p $INSTALLDIR_NATIVE
-rm -rf $PACKAGEDIR && mkdir -p $PACKAGEDIR
-
 logdir=$script_path
 
 cd $SRCDIR
 
-log conf binutils
+if [ -d $BUILDDIR_NATIVE/binutils ]
+then
+    log skip "existing_binutils"
+    copy_dir $INSTALLDIR_NATIVE $BUILDDIR_NATIVE/target-libs
+else
+    mkdir -p $BUILDDIR_NATIVE
+    rm -rf $INSTALLDIR_NATIVE && mkdir -p $INSTALLDIR_NATIVE
 
-rm -rf $BUILDDIR_NATIVE/binutils && mkdir -p $BUILDDIR_NATIVE/binutils
-pushd $BUILDDIR_NATIVE/binutils
-saveenv
-saveenvvar CFLAGS "$ENV_CFLAGS"
-saveenvvar CPPFLAGS "$ENV_CPPFLAGS"
-saveenvvar LDFLAGS "$ENV_LDFLAGS"
-$SRCDIR/$BINUTILS/configure  \
-    ${BINUTILS_CONFIG_OPTS} \
-    --target=$TARGET \
-    --prefix=$INSTALLDIR_NATIVE \
-    --infodir=$INSTALLDIR_NATIVE_DOC/info \
-    --mandir=$INSTALLDIR_NATIVE_DOC/man \
-    --htmldir=$INSTALLDIR_NATIVE_DOC/html \
-    --pdfdir=$INSTALLDIR_NATIVE_DOC/pdf \
-    --disable-nls \
-    --disable-werror \
-    --disable-sim \
-    --disable-gdb \
-    --enable-interwork \
-    --enable-plugins \
-    --with-sysroot=$INSTALLDIR_NATIVE/arm-none-eabi \
-    "--with-pkgversion=$PKGVERSION"
+    log conf binutils
+    mkdir -p $BUILDDIR_NATIVE/binutils
+    pushd $BUILDDIR_NATIVE/binutils
+    saveenv
+    saveenvvar CFLAGS "$ENV_CFLAGS"
+    saveenvvar CPPFLAGS "$ENV_CPPFLAGS"
+    saveenvvar LDFLAGS "$ENV_LDFLAGS"
+    $SRCDIR/$BINUTILS/configure  \
+        ${BINUTILS_CONFIG_OPTS} \
+        --target=$TARGET \
+        --prefix=$INSTALLDIR_NATIVE \
+        --infodir=$INSTALLDIR_NATIVE_DOC/info \
+        --mandir=$INSTALLDIR_NATIVE_DOC/man \
+        --htmldir=$INSTALLDIR_NATIVE_DOC/html \
+        --pdfdir=$INSTALLDIR_NATIVE_DOC/pdf \
+        --disable-nls \
+        --disable-werror \
+        --disable-sim \
+        --disable-gdb \
+        --enable-interwork \
+        --enable-plugins \
+        --with-sysroot=$INSTALLDIR_NATIVE/arm-none-eabi \
+        "--with-pkgversion=$PKGVERSION"
 
-log make binutils
-make -j$JOBS
+    log make binutils
+    make -j$JOBS
 
-log inst binutils
-make install
+    log inst binutils
+    make install
 
-copy_dir $INSTALLDIR_NATIVE $BUILDDIR_NATIVE/target-libs
-restoreenv
-popd
+    copy_dir $INSTALLDIR_NATIVE $BUILDDIR_NATIVE/target-libs
+    restoreenv
+    popd
+fi
 
 pushd $INSTALLDIR_NATIVE
 rm -rf ./lib
