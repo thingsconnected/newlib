@@ -162,38 +162,47 @@ build_gcc() {
     local lib_suffix=$2
 
     log conf gcc-$lib_suffix
-    rm -rf $BUILDDIR_NATIVE/gcc-first && mkdir -p $BUILDDIR_NATIVE/gcc-first
-    pushd $BUILDDIR_NATIVE/gcc-first
-    $SRCDIR/$GCC/configure --target=$TARGET \
-        --prefix=$INSTALLDIR_NATIVE \
-        --libexecdir=$INSTALLDIR_NATIVE/lib \
-        --infodir=$INSTALLDIR_NATIVE_DOC/info \
-        --mandir=$INSTALLDIR_NATIVE_DOC/man \
-        --htmldir=$INSTALLDIR_NATIVE_DOC/html \
-        --pdfdir=$INSTALLDIR_NATIVE_DOC/pdf \
-        --enable-languages=c \
-        --enable-plugins \
-        --disable-decimal-float \
-        --disable-libffi \
-        --disable-libgomp \
-        --disable-libmudflap \
-        --disable-libquadmath \
-        --disable-libssp \
-        --disable-libstdcxx-pch \
-        --disable-nls \
-        --disable-shared \
-        --disable-threads \
-        --disable-tls \
-        --with-gnu-as \
-        --with-gnu-ld \
-        --with-newlib \
-        --with-headers=yes \
-        --with-python-dir=share/gcc-arm-none-eabi \
-        --with-sysroot=$INSTALLDIR_NATIVE/arm-none-eabi \
-        $GCC_CONFIG_OPTS                              \
-        "${GCC_CONFIG_OPTS_LCPP}"                              \
-        "--with-pkgversion=$PKGVERSION" \
-        ${MULTILIB_LIST}
+    if [ -z ${gcc_configured:-} ]
+    then
+        gcc_configured=1
+        rm -rf $BUILDDIR_NATIVE/gcc-first && mkdir -p $BUILDDIR_NATIVE/gcc-first
+        pushd $BUILDDIR_NATIVE/gcc-first
+        $SRCDIR/$GCC/configure --target=$TARGET \
+            --prefix=$INSTALLDIR_NATIVE \
+            --libexecdir=$INSTALLDIR_NATIVE/lib \
+            --infodir=$INSTALLDIR_NATIVE_DOC/info \
+            --mandir=$INSTALLDIR_NATIVE_DOC/man \
+            --htmldir=$INSTALLDIR_NATIVE_DOC/html \
+            --pdfdir=$INSTALLDIR_NATIVE_DOC/pdf \
+            --enable-languages=c \
+            --enable-plugins \
+            --disable-decimal-float \
+            --disable-libffi \
+            --disable-libgomp \
+            --disable-libmudflap \
+            --disable-libquadmath \
+            --disable-libssp \
+            --disable-libstdcxx-pch \
+            --disable-nls \
+            --disable-shared \
+            --disable-threads \
+            --disable-tls \
+            --with-gnu-as \
+            --with-gnu-ld \
+            --with-newlib \
+            --with-headers=yes \
+            --with-python-dir=share/gcc-arm-none-eabi \
+            --with-sysroot=$INSTALLDIR_NATIVE/arm-none-eabi \
+            $GCC_CONFIG_OPTS                              \
+            "${GCC_CONFIG_OPTS_LCPP}"                              \
+            "--with-pkgversion=$PKGVERSION" \
+            ${MULTILIB_LIST}
+    else
+        echo "gcc is already configured, removing libgcc* for rebuild"
+        rm -r $BUILDDIR_NATIVE/gcc-first/arm-none-eabi/libgcc
+        rm -r $BUILDDIR_NATIVE/gcc-first/gcc/libgcc.mvars
+        pushd $BUILDDIR_NATIVE/gcc-first
+    fi
 
     # Passing USE_TM_CLONE_REGISTRY=0 via INHIBIT_LIBC_CFLAGS to disable
     # transactional memory related code in crtbegin.o.
@@ -208,6 +217,8 @@ build_gcc() {
 
     log inst gcc-$lib_suffix
     make install
+
+    popd
 
     log copy gcc-$lib_suffix
     pushd $INSTALLDIR_NATIVE/lib/gcc/arm-none-eabi/10.0.0/
