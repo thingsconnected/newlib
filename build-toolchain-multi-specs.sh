@@ -251,6 +251,7 @@ build_gcc() {
 build_libc() {
     local lib_cflags=$1
     local lib_suffix=$2
+    local cc1_specs=$3
 
     log conf libc-$lib_suffix
 
@@ -301,7 +302,7 @@ build_libc() {
 
     local newspecs="nano_${lib_suffix}.specs"
     inform gen $newspecs
-    cat nano.specs | sed -e "s/_nano/_nano_${lib_suffix}/g" > $newspecs
+    cat nano.specs | sed -e "s/_nano/_nano_${lib_suffix}/g;s/(nano_cc1)/& ${cc1_specs}/" > $newspecs
     rm nano.specs
     popd
 }
@@ -312,17 +313,33 @@ rm -rf ./lib/libiberty.a
 rm -rf include
 popd
 
-lib_cflags="-g -Os -ffunction-sections -fdata-sections -fno-exceptions -ffixed-r10 -ffixed-fp -ffixed-r9"
+cc1_specs="-mpreferred-stack-boundary=2"
+lib_cflags="${cc1_specs} -g -Os -ffunction-sections -fdata-sections -fno-exceptions -ffixed-r10 -ffixed-fp -ffixed-r9"
+lib_suffix="Os_sb2_freeregs"
+
+build_gcc "${lib_cflags}" "${lib_suffix}"
+build_libc "${lib_cflags}" "${lib_suffix}" "${cc1_specs}"
+
+cc1_specs="-mpreferred-stack-boundary=2"
+lib_cflags="${cc1_specs} -g -O2 -ffunction-sections -fdata-sections -fno-exceptions"
+lib_suffix="O2_sb2"
+
+build_gcc "${lib_cflags}" "${lib_suffix}"
+build_libc "${lib_cflags}" "${lib_suffix}" "${cc1_specs}"
+
+cc1_specs=""
+lib_cflags="${cc1_specs} -g -Os -ffunction-sections -fdata-sections -fno-exceptions -ffixed-r10 -ffixed-fp -ffixed-r9"
 lib_suffix="Os_freeregs"
 
 build_gcc "${lib_cflags}" "${lib_suffix}"
-build_libc "${lib_cflags}" "${lib_suffix}"
+build_libc "${lib_cflags}" "${lib_suffix}" "${cc1_specs}"
 
-lib_cflags="-g -O2 -ffunction-sections -fdata-sections -fno-exceptions"
+cc1_specs=""
+lib_cflags="${cc1_specs} -g -O2 -ffunction-sections -fdata-sections -fno-exceptions"
 lib_suffix="O2"
 
 build_gcc "${lib_cflags}" "${lib_suffix}"
-build_libc "${lib_cflags}" "${lib_suffix}"
+build_libc "${lib_cflags}" "${lib_suffix}" "${cc1_specs}"
 
 # It is assumed that the different libc builds all have the same newlib.h
 mkdir -p $INSTALLDIR_NATIVE/arm-none-eabi/include/newlib-nano
